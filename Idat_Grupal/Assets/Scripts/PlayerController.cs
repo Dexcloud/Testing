@@ -4,16 +4,12 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    ExternalFootController externalFoot;
     FootController foot;
-    HeadController head;
 
+    List<BulletController> bullets = new List<BulletController>();
     [SerializeField] GameObject bullet;
 
     Rigidbody2D rb;
-
-    Vector2 contactDirection = Vector2.zero;
-    Vector2 slideDirection = Vector2.zero;
 
     Vector2 moveDirection = Vector2.zero;
 
@@ -24,6 +20,10 @@ public class PlayerController : MonoBehaviour
 
     bool isGrounded = false;
 
+    int bulletCounter = 0;
+
+    float shootTimer = 0;
+    int shootCounter = 0;
 
     private void Awake()
     {
@@ -33,72 +33,162 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.bodyType = RigidbodyType2D.Dynamic;
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
-        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-        rb.useFullKinematicContacts = true;
 
-        externalFoot = GetComponentInChildren<ExternalFootController>();
         foot = GetComponentInChildren<FootController>();
-        head = GetComponentInChildren<HeadController>();
+
+        for (int i = 0; i < 15; i++)
+        {
+            bullets.Add(Instantiate(bullet).GetComponent<BulletController>());
+            //bullets[i].transform.SetParent(this.transform);
+            bullets[i].gameObject.SetActive(false);
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (shootTimer > 0) shootTimer -= Time.deltaTime;
+
         moveDirection = Vector2.zero;
         if (Input.GetKey(KeyCode.D)) moveDirection += Vector2.right;
         if (Input.GetKey(KeyCode.A)) moveDirection += Vector2.left;
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded) VerticalSpeed = jumpSpeed;
 
-        if (foot.IsGrounded && !head.IsGrounded) transform.position += Vector3.up * 0.02f;
-        if (!foot.IsGrounded && head.IsGrounded) transform.position += Vector3.down * 0.02f;
+        if (isGrounded) rb.gravityScale = 1;
+        else rb.gravityScale = 3;
 
-        slideDirection = GetSlideVector(externalFoot.contactDirection);
-        //slideDirection = GetSlideVector(contactDirection);
+        //if (Input.GetKeyDown(KeyCode.Mouse0)) Shoot(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+        if (Input.GetKey(KeyCode.Mouse0) && shootTimer <= 0)
+        {
+            Shoot(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+            if (shootCounter < 3)
+            {
+                shootTimer = 0.15f;
+                shootCounter += 1;
+            }
+            if (shootCounter == 3)
+            {
+                shootTimer = 0.5f;
+                shootCounter = 0;
+            }
+        }
+
+        if (Input.GetKeyUp(KeyCode.Mouse0))
+        {
+            shootCounter = 0;
+            shootTimer = 0;
+        }
+
     }
 
     private void FixedUpdate()
     {
         if (isGrounded && VerticalSpeed < 0) VerticalSpeed = 0;
         else if (isGrounded == false) VerticalSpeed -= gravity * Time.fixedDeltaTime;
-        rb.velocity = moveDirection * Speed + Vector2.up * VerticalSpeed + SlideVector;
-        //rb.velocity = moveDirection * Speed + Vector2.up * VerticalSpeed + slideDirection;// * Mathf.Sin(GetSlideAngle(contactDirection));
 
-        //if (foot.IsGrounded && !head.IsGrounded) rb.velocity = Vector2.right * rb.velocity.x + Vector2.up * 5f;
-        //if (!foot.IsGrounded && head.IsGrounded) rb.velocity = Vector2.right * rb.velocity.x + Vector2.down * 5f;
+        if (foot.IsGrounded) rb.velocity = moveDirection * Speed + Vector2.up * VerticalSpeed;
+        else rb.velocity = moveDirection * Speed + Vector2.up * rb.velocityY;
 
     }
 
-    Vector2 GetSlideVector(Vector2 normal)
+    void Shoot(Vector2 targetPosition)
     {
-        Vector2 slider = Vector2.zero;
-
-        normal = new Vector2(-normal.y, normal.x);
-
-        if (normal.x > 0)
+        if (bullets[bulletCounter].isActiveAndEnabled == false)
         {
-            float angle = Mathf.Atan(normal.y / normal.x) * Mathf.Rad2Deg;
-            print(angle);
-            if (-90 < angle && angle < -25) slider = normal;
-            if (25 < angle && angle < 90) slider = -normal;
+            Vector2 direction = targetPosition - (Vector2)transform.position;
+            direction = AdjustDirection(direction);
+
+            bullets[bulletCounter].gameObject.SetActive(true);
+            bullets[bulletCounter].transform.position = this.transform.position;
+            bullets[bulletCounter].MoveDirection = direction;
+
+            bulletCounter = bulletCounter == 14 ? 0 : bulletCounter + 1;
+        }
+    }
+
+    float GetDistance(Vector2 point, float m)
+    {
+        float A, B, divider;
+
+        if (m == Mathf.Infinity)
+        {
+            A = 1;
+            B = 0;
         }
         else
         {
-            if (normal.y > 0) slider = Vector2.left;
-            if (normal.y < 0) slider = Vector2.right;
+            A = m;
+            B = -1;
         }
-        
-        return slider;
+
+        divider = Mathf.Sqrt(A * A + B * B);
+
+        return Mathf.Abs(A * point.x + B * point.y) / divider;
     }
 
-    float GetSlideAngle(Vector2 normal)
+    Vector2 AdjustDirection(Vector2 direction)
     {
-        float angle = 0;
-        normal = new Vector2(-normal.y, normal.x);
+        if (direction.x > 0 && direction.y > 0) // Primer Cuadrante
+        {
+            if (direction.x > direction.y)
+            {
+                if (GetDistance(direction, 0) < GetDistance(direction, 1)) direction = Vector2.right;
+                else direction = Vector2.right + Vector2.up;
+            }
+            else //(direction.x <= direction.y)
+            {
+                if (GetDistance(direction, Mathf.Infinity) < GetDistance(direction, 1)) direction = Vector2.up;
+                else direction = Vector2.right + Vector2.up;
+            }
+        }
+        else if (direction.x < 0 && direction.y > 0) // Segundo Cuadrante
+        {
+            if (-direction.x > direction.y)
+            {
+                if (GetDistance(direction, 0) < GetDistance(direction, -1)) direction = Vector2.left;
+                else direction = Vector2.left + Vector2.up;
+            }
+            else //(-direction.x <= direction.y)
+            {
+                if (GetDistance(direction, Mathf.Infinity) < GetDistance(direction, -1)) direction = Vector2.up;
+                else direction = Vector2.left + Vector2.up;
+            }
+        }
+        else if (direction.x < 0 && direction.y < 0) // Tercer Cuadrante
+        {
+            if (-direction.x > -direction.y)
+            {
+                if (GetDistance(direction, 0) < GetDistance(direction, 1)) direction = Vector2.left;
+                else direction = Vector2.left + Vector2.down;
+            }
+            else //(-direction.x <= -direction.y)
+            {
+                if (GetDistance(direction, Mathf.Infinity) < GetDistance(direction, 1)) direction = Vector2.down;
+                else direction = Vector2.left + Vector2.down;
+            }
+        }
+        else if (direction.x > 0 && direction.y < 0) // Cuarto Cuadrante
+        {
+            if (direction.x > -direction.y)
+            {
+                if (GetDistance(direction, 0) < GetDistance(direction, -1)) direction = Vector2.right;
+                else direction = Vector2.right + Vector2.down;
+            }
+            else //(direction.x <= -direction.y)
+            {
+                if (GetDistance(direction, Mathf.Infinity) < GetDistance(direction, -1)) direction = Vector2.down;
+                else direction = Vector2.right + Vector2.down;
+            }
+        }
+        else if (direction.x > 0 && direction.y == 0) direction = Vector2.right;
+        else if (direction.x == 0 && direction.y > 0) direction = Vector2.up;
+        else if (direction.x < 0 && direction.y == 0) direction = Vector2.left;
+        else if (direction.x == 0 && direction.y < 0) direction = Vector2.down;
+        else direction = Vector2.right; // x == 0; y == 0
 
-        if (normal.x > 0) angle = Mathf.Atan(normal.y / normal.x);
-        return angle;
+        return direction.normalized;
     }
 
     internal float Speed
@@ -117,26 +207,19 @@ public class PlayerController : MonoBehaviour
         set { verticalSpeed = (value < -jumpSpeed ? -jumpSpeed : value); }
     }
 
-    Vector2 SlideVector
-    {
-        get { return 10 * Mathf.Sin(GetSlideAngle(contactDirection)) * slideDirection; }
-    }
-
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.collider.CompareTag("Ground"))
         {
             isGrounded = true;
-            contactDirection = (collision.GetContact(0).point - (Vector2)transform.position).normalized;
         }
     }
 
     private void OnCollisionStay2D(Collision2D collision)
     {
-        if(collision.collider.CompareTag("Ground"))
+        if (collision.collider.CompareTag("Ground"))
         {
             isGrounded = true;
-            contactDirection = (collision.GetContact(0).point - (Vector2)transform.position).normalized;
         }
     }
 
@@ -145,9 +228,15 @@ public class PlayerController : MonoBehaviour
         if (collision.collider.CompareTag("Ground"))
         {
             isGrounded = false;
-            contactDirection = Vector2.zero;
         }
     }
+
+
+
+
+
+
+
 
 
 }

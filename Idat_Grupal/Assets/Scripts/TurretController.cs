@@ -2,28 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerControllerDynamic : MonoBehaviour
+public class TurretController : MonoBehaviour
 {
-    FootController foot;
-
     List<BulletController> bullets = new List<BulletController>();
     [SerializeField] GameObject bullet;
 
     Rigidbody2D rb;
 
-    Vector2 moveDirection = Vector2.zero;
-
-    float speed = 10;
-    float verticalSpeed = 0;
-    float gravity = 30;
-    float jumpSpeed = 15;
-
-    bool isGrounded = false;
-
-    int bulletCounter = 0;
-
     float shootTimer = 0;
     int shootCounter = 0;
+
+    int bulletCounter = 0;
 
     private void Awake()
     {
@@ -34,9 +23,7 @@ public class PlayerControllerDynamic : MonoBehaviour
     void Start()
     {
         rb.bodyType = RigidbodyType2D.Dynamic;
-        rb.constraints = RigidbodyConstraints2D.FreezeRotation;
-
-        foot = GetComponentInChildren<FootController>();
+        rb.constraints = RigidbodyConstraints2D.FreezeAll;
 
         for (int i = 0; i < 15; i++)
         {
@@ -49,17 +36,6 @@ public class PlayerControllerDynamic : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (shootTimer > 0) shootTimer -= Time.deltaTime;
-
-        moveDirection = Vector2.zero;
-        if (Input.GetKey(KeyCode.D)) moveDirection += Vector2.right;
-        if (Input.GetKey(KeyCode.A)) moveDirection += Vector2.left;
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded) VerticalSpeed = jumpSpeed;
-
-        if (isGrounded) rb.gravityScale = 1;
-        else rb.gravityScale = 3;
-
-        //if (Input.GetKeyDown(KeyCode.Mouse0)) Shoot(Camera.main.ScreenToWorldPoint(Input.mousePosition));
         if (Input.GetKey(KeyCode.Mouse0) && shootTimer <= 0)
         {
             Shoot(Camera.main.ScreenToWorldPoint(Input.mousePosition));
@@ -74,23 +50,6 @@ public class PlayerControllerDynamic : MonoBehaviour
                 shootCounter = 0;
             }
         }
-
-        if (Input.GetKeyUp(KeyCode.Mouse0))
-        {
-            shootCounter = 0;
-            shootTimer = 0;
-        }
-
-    }
-
-    private void FixedUpdate()
-    {
-        if (isGrounded && VerticalSpeed < 0) VerticalSpeed = 0;
-        else if (isGrounded == false) VerticalSpeed -= gravity * Time.fixedDeltaTime;
-
-        if (foot.IsGrounded) rb.velocity = moveDirection * Speed + Vector2.up * VerticalSpeed;
-        else rb.velocity = moveDirection * Speed + Vector2.up * rb.velocityY;
-
     }
 
     void Shoot(Vector2 targetPosition)
@@ -106,26 +65,6 @@ public class PlayerControllerDynamic : MonoBehaviour
 
             bulletCounter = bulletCounter == 14 ? 0 : bulletCounter + 1;
         }
-    }
-
-    float GetDistance(Vector2 point, float m)
-    {
-        float A, B, divider;
-
-        if (m == Mathf.Infinity)
-        {
-            A = 1;
-            B = 0;
-        }
-        else
-        {
-            A = m;
-            B = -1;
-        }
-
-        divider = Mathf.Sqrt(A * A + B * B);
-
-        return Mathf.Abs(A * point.x + B * point.y) / divider;
     }
 
     Vector2 AdjustDirection(Vector2 direction)
@@ -191,52 +130,23 @@ public class PlayerControllerDynamic : MonoBehaviour
         return direction.normalized;
     }
 
-    internal float Speed
+    float GetDistance(Vector2 point, float m)
     {
-        get
+        float A, B, divider;
+
+        if (m == Mathf.Infinity)
         {
-            if (Input.GetKey(KeyCode.LeftShift)) return speed * 1.5f;
-            else return speed;
+            A = 1;
+            B = 0;
         }
-        set { speed = (value < 0 ? 0 : value); }
-    }
-
-    internal float VerticalSpeed
-    {
-        get { return verticalSpeed; }
-        set { verticalSpeed = (value < -jumpSpeed ? -jumpSpeed : value); }
-    }
-
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.collider.CompareTag("Ground"))
+        else
         {
-            isGrounded = true;
+            A = m;
+            B = -1;
         }
+
+        divider = Mathf.Sqrt(A * A + B * B);
+
+        return Mathf.Abs(A * point.x + B * point.y) / divider;
     }
-
-    private void OnCollisionStay2D(Collision2D collision)
-    {
-        if (collision.collider.CompareTag("Ground"))
-        {
-            isGrounded = true;
-        }
-    }
-
-    private void OnCollisionExit2D(Collision2D collision)
-    {
-        if (collision.collider.CompareTag("Ground"))
-        {
-            isGrounded = false;
-        }
-    }
-
-
-
-
-
-
-
-
-
 }
