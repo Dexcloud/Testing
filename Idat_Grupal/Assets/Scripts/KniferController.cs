@@ -4,14 +4,31 @@ using UnityEngine;
 
 public class KniferController : MonoBehaviour
 {
-    public Transform playerTransform;
+    Transform playerTransform;
+
+    BoxCollider2D detector;
+
+    Rigidbody2D rb;
 
     List<KnifeController> knifes = new List<KnifeController>();
     [SerializeField] GameObject knife;
 
+    private void Awake()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        detector = GetComponent<BoxCollider2D>();
+    }
+
     // Start is called before the first frame update
     void Start()
     {
+        rb.bodyType = RigidbodyType2D.Dynamic;
+        rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+
+        detector.isTrigger = true;
+        detector.size = new Vector2(20, 5);
+
+
         for (int i = 0; i < 5; i++)
         {
             knifes.Add(Instantiate(knife).GetComponent<KnifeController>());
@@ -24,34 +41,21 @@ public class KniferController : MonoBehaviour
     {
 
 
-        //print(playerTransform.position);
     }
 
     private void FixedUpdate()
     {
-        if (playerTransform == null)
-        {
-            if (Physics2D.OverlapBox(transform.position, new Vector2(5, 1.5f), 0, LayerMask.GetMask("Player")).transform != null)
-            {
-                playerTransform = Physics2D.OverlapBox(transform.position, new Vector2(5, 1.5f), 0, LayerMask.GetMask("Player")).transform;
-            }
-            
 
-            
-            //playerTransform = Physics2D.OverlapBox(transform.position, new Vector2(5, 1.5f), 0, LayerMask.GetMask("Player")).transform;
-            
+
+
+
+    }
+
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Player") && playerTransform == null)
+        {
+            playerTransform = collision.transform;
         }
-        
-        //if (playerTransform == null)
-        //{
-        //    return;
-            
-        //    //playerTransform = Physics2D.OverlapBox(transform.position, new Vector2(5, 1.5f), 0, LayerMask.GetMask("Player")).transform;
-            
-        //}
-        //else
-        //{
-        //    playerTransform = Physics2D.OverlapBox(transform.position, new Vector2(5, 1.5f), 0, LayerMask.GetMask("Player")).transform;
-        //}
     }
 }
