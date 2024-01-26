@@ -14,6 +14,8 @@ public class TurretController : MonoBehaviour
 
     int bulletCounter = 0;
 
+    Vector2 shootDirection = Vector2.zero;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -28,38 +30,67 @@ public class TurretController : MonoBehaviour
         for (int i = 0; i < 15; i++)
         {
             bullets.Add(Instantiate(bullet).GetComponent<BulletController>());
-            //bullets[i].transform.SetParent(this.transform);
+            bullets[i].transform.SetParent(this.transform);
             bullets[i].gameObject.SetActive(false);
+        }
+
+        switch (transform.rotation.z)
+        {
+            case 0:
+                shootDirection = Vector2.up;
+                break;
+            case 45:
+                shootDirection = (Vector2.up + Vector2.left).normalized;
+                break;
+            case 90:
+                shootDirection = Vector2.left;
+                break;
+            case 135:
+                shootDirection = (Vector2.left + Vector2.down).normalized;
+                break;
+            case -45:
+                shootDirection = (Vector2.right + Vector2.up).normalized;
+                break;
+            case -90:
+                shootDirection = Vector2.right;
+                break;
+            case -135:
+                shootDirection = (Vector2.right + Vector2.down).normalized;
+                break;
+            default:
+                shootDirection = Vector2.down;
+                break;
         }
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKey(KeyCode.Mouse0) && shootTimer <= 0)
+        if (shootTimer >= 0) shootTimer -= Time.deltaTime;
+
+        if (shootTimer <= 0)
         {
-            Shoot(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+            Shoot(shootDirection);
             if (shootCounter < 3)
             {
-                shootTimer = 0.15f;
+                shootTimer = 0.25f;
                 shootCounter += 1;
             }
             if (shootCounter == 3)
             {
-                shootTimer = 0.5f;
+                shootTimer = 0.75f;
                 shootCounter = 0;
             }
         }
     }
 
-    void Shoot(Vector2 targetPosition)
+    void Shoot(Vector2 direction)
     {
         if (bullets[bulletCounter].isActiveAndEnabled == false)
         {
-            Vector2 direction = targetPosition - (Vector2)transform.position;
-            direction = AdjustDirection(direction);
-
             bullets[bulletCounter].gameObject.SetActive(true);
+            bullets[bulletCounter].Target = BulletController.TargetType.player;
+            bullets[bulletCounter].BulletSpeed = 10;
             bullets[bulletCounter].transform.position = this.transform.position;
             bullets[bulletCounter].MoveDirection = direction;
 

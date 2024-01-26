@@ -632,9 +632,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1561968672}
   - component: {fileID: 1561968671}
-  - component: {fileID: 1561968673}
   - component: {fileID: 1561968675}
   - component: {fileID: 1561968674}
+  - component: {fileID: 1561968673}
   m_Layer: 0
   m_Name: Turret
   m_TagString: Untagged
@@ -899,9 +899,9 @@ GameObject:
   - component: {fileID: 1766124091}
   - component: {fileID: 1766124090}
   - component: {fileID: 1766124089}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1044,7 +1044,7 @@ Transform:
   m_GameObject: {fileID: 1766124088}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -10.14, y: -1.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1061,7 +1061,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1766470078}
   - component: {fileID: 1766470077}
-  - component: {fileID: 1766470079}
+  - component: {fileID: 1766470080}
   m_Layer: 0
   m_Name: Enemy01
   m_TagString: Untagged
@@ -1136,7 +1136,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1766470079
+--- !u!114 &1766470080
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1145,9 +1145,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1766470076}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a6b483871b0aea7439f50b4af1fc9288, type: 3}
+  m_Script: {fileID: 11500000, guid: ffbdb5a678e1e2548bbbf158f02599f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  knife: {fileID: 8484750213866074982, guid: 84094a364c4e87d408b30267fab1aa61, type: 3}
 --- !u!1 &1866110656
 GameObject:
   m_ObjectHideFlags: 0
